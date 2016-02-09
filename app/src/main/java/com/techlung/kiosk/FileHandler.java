@@ -1,11 +1,11 @@
-package com.techlung.kiosk.files;
+package com.techlung.kiosk;
 
 import android.content.Context;
 
 import java.io.File;
 
 public class FileHandler {
-    private static final boolean IS_DB_SAVED_EXTERN = false;
+    private static final boolean IS_DB_SAVED_EXTERN = true;
 
 
     private static File getDbFolder(Context context) {

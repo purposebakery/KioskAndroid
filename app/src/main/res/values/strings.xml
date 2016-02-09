@@ -1,27 +1,27 @@
 <resources>
 
     <string name="alert_ok">OK</string>
-    <string name="alert_cancel">Cancel</string>
-    <string name="alert_delete">Delete</string>
+    <string name="alert_cancel">Abbrechen</string>
+    <string name="alert_delete">Löschen</string>
 
     <string name="app_name">Kiosk</string>
-    <string name="title_customer_detail">Customer Detail</string>
 
-    <string name="customer_create">Create customer</string>
-    <string name="customer_edit">Edit customer</string>
+    <string name="customer_create">Kunden erstellen</string>
+    <string name="customer_edit">Kunden bearbeiten</string>
     <string name="customer_modify_name">Name</string>
     <string name="customer_modify_mail">E-Mail</string>
 
 
-    <string name="article_create">Create article</string>
-    <string name="article_edit">Edit article</string>
+    <string name="article_create">Artikel erstellen</string>
+    <string name="article_edit">Artikel bearbeiten</string>
     <string name="article_modify_name">Name</string>
-    <string name="article_modify_price">Price</string>
+    <string name="article_modify_price">Preis</string>
 
-    <string name="action_send">Send Invoices</string>
+    <string name="action_send">Rechnung verschicken</string>
     <string name="action_send_owner_mail">oliver.metz@bertelsmann.de</string>
     <string name="action_send_subject">Kiosk Rechnung</string>
     <string name="action_send_message">Hallo zusammen, \nbitte begleicht zeitnah euer kiosk-konto :) </string>
+    <string name="action_send_bye">Besten Gruß\neuer Kiosk</string>
 
     <string name="title_activity_main">Kiosk Peaches</string>
 

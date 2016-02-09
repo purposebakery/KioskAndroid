@@ -5,7 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 
-import com.techlung.kiosk.files.FileHandler;
+import com.techlung.kiosk.FileHandler;
 import com.techlung.kiosk.greendao.generated.ArticleDao;
 import com.techlung.kiosk.greendao.generated.CustomerDao;
 import com.techlung.kiosk.greendao.generated.DaoMaster;

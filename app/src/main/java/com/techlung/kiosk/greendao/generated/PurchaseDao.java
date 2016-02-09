@@ -19,7 +19,7 @@ import com.techlung.kiosk.greendao.generated.Purchase;
 /** 
  * DAO for table "PURCHASE".
 */
-public class PurchaseDao extends AbstractDao<Purchase, Void> {
+public class PurchaseDao extends AbstractDao<Purchase, Long> {
 
     public static final String TABLENAME = "PURCHASE";
 
@@ -28,9 +28,10 @@ public class PurchaseDao extends AbstractDao<Purchase, Void> {
      * Can be used for QueryBuilder and for referencing column names.
     */
     public static class Properties {
-        public final static Property Amount = new Property(0, Integer.class, "amount", false, "AMOUNT");
-        public final static Property ArticleId = new Property(1, Long.class, "articleId", false, "ARTICLE_ID");
-        public final static Property CustomerId = new Property(2, Long.class, "customerId", false, "CUSTOMER_ID");
+        public final static Property Id = new Property(0, Long.class, "id", true, "ID");
+        public final static Property Amount = new Property(1, Integer.class, "amount", false, "AMOUNT");
+        public final static Property ArticleId = new Property(2, Long.class, "articleId", false, "ARTICLE_ID");
+        public final static Property CustomerId = new Property(3, Long.class, "customerId", false, "CUSTOMER_ID");
     };
 
     private DaoSession daoSession;
@@ -50,9 +51,10 @@ public class PurchaseDao extends AbstractDao<Purchase, Void> {
     public static void createTable(SQLiteDatabase db, boolean ifNotExists) {
         String constraint = ifNotExists? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"PURCHASE\" (" + //
-                "\"AMOUNT\" INTEGER," + // 0: amount
-                "\"ARTICLE_ID\" INTEGER," + // 1: articleId
-                "\"CUSTOMER_ID\" INTEGER);"); // 2: customerId
+                "\"ID\" INTEGER PRIMARY KEY AUTOINCREMENT ," + // 0: id
+                "\"AMOUNT\" INTEGER," + // 1: amount
+                "\"ARTICLE_ID\" INTEGER," + // 2: articleId
+                "\"CUSTOMER_ID\" INTEGER);"); // 3: customerId
     }
 
     /** Drops the underlying database table. */
@@ -66,19 +68,24 @@ public class PurchaseDao extends AbstractDao<Purchase, Void> {
     protected void bindValues(SQLiteStatement stmt, Purchase entity) {
         stmt.clearBindings();
  
+        Long id = entity.getId();
+        if (id != null) {
+            stmt.bindLong(1, id);
+        }
+ 
         Integer amount = entity.getAmount();
         if (amount != null) {
-            stmt.bindLong(1, amount);
+            stmt.bindLong(2, amount);
         }
  
         Long articleId = entity.getArticleId();
         if (articleId != null) {
-            stmt.bindLong(2, articleId);
+            stmt.bindLong(3, articleId);
         }
  
         Long customerId = entity.getCustomerId();
         if (customerId != null) {
-            stmt.bindLong(3, customerId);
+            stmt.bindLong(4, customerId);
         }
     }
 
@@ -90,17 +97,18 @@ public class PurchaseDao extends AbstractDao<Purchase, Void> {
 
     /** @inheritdoc */
     @Override
-    public Void readKey(Cursor cursor, int offset) {
-        return null;
+    public Long readKey(Cursor cursor, int offset) {
+        return cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0);
     }    
 
     /** @inheritdoc */
     @Override
     public Purchase readEntity(Cursor cursor, int offset) {
         Purchase entity = new Purchase( //
-            cursor.isNull(offset + 0) ? null : cursor.getInt(offset + 0), // amount
-            cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1), // articleId
-            cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2) // customerId
+            cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0), // id
+            cursor.isNull(offset + 1) ? null : cursor.getInt(offset + 1), // amount
+            cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2), // articleId
+            cursor.isNull(offset + 3) ? null : cursor.getLong(offset + 3) // customerId
         );
         return entity;
     }
@@ -108,22 +116,27 @@ public class PurchaseDao extends AbstractDao<Purchase, Void> {
     /** @inheritdoc */
     @Override
     public void readEntity(Cursor cursor, Purchase entity, int offset) {
-        entity.setAmount(cursor.isNull(offset + 0) ? null : cursor.getInt(offset + 0));
-        entity.setArticleId(cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1));
-        entity.setCustomerId(cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2));
+        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
+        entity.setAmount(cursor.isNull(offset + 1) ? null : cursor.getInt(offset + 1));
+        entity.setArticleId(cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2));
+        entity.setCustomerId(cursor.isNull(offset + 3) ? null : cursor.getLong(offset + 3));
      }
     
     /** @inheritdoc */
     @Override
-    protected Void updateKeyAfterInsert(Purchase entity, long rowId) {
-        // Unsupported or missing PK type
-        return null;
+    protected Long updateKeyAfterInsert(Purchase entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
     }
     
     /** @inheritdoc */
     @Override
-    public Void getKey(Purchase entity) {
-        return null;
+    public Long getKey(Purchase entity) {
+        if(entity != null) {
+            return entity.getId();
+        } else {
+            return null;
+        }
     }
 
     /** @inheritdoc */

@@ -9,6 +9,7 @@ import de.greenrobot.dao.DaoException;
  */
 public class Purchase {
 
+    private Long id;
     private Integer amount;
     private Long articleId;
     private Long customerId;
@@ -26,7 +27,12 @@ public class Purchase {
     public Purchase() {
     }
 
-    public Purchase(Integer amount, Long articleId, Long customerId) {
+    public Purchase(Long id) {
+        this.id = id;
+    }
+
+    public Purchase(Long id, Integer amount, Long articleId, Long customerId) {
+        this.id = id;
         this.amount = amount;
         this.articleId = articleId;
         this.customerId = customerId;
@@ -36,6 +42,14 @@ public class Purchase {
     public void __setDaoSession(DaoSession daoSession) {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getPurchaseDao() : null;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Integer getAmount() {

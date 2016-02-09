@@ -17,6 +17,7 @@ public class ExtendedCustomerDao {
 
     public List<Customer> getAllCustomers() {
         QueryBuilder<Customer> queryBuilder = dao.queryBuilder();
+        queryBuilder.orderAsc(CustomerDao.Properties.Name);
         return queryBuilder.list();
     }
 

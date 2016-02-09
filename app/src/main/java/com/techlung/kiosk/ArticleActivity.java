@@ -4,9 +4,11 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
@@ -15,22 +17,37 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
+import com.techlung.kiosk.greendao.extended.ExtendedPurchaseDao;
 import com.techlung.kiosk.greendao.extended.KioskDaoFactory;
 import com.techlung.kiosk.greendao.generated.Article;
+import com.techlung.kiosk.greendao.generated.Customer;
+import com.techlung.kiosk.greendao.generated.Purchase;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 public class ArticleActivity extends AppCompatActivity {
+
+    public static final String CUSTOMER_ID_EXTRA = "CUSTOMER_ID_EXTRA";
 
     private List<Article> articles = new ArrayList<Article>();
     private ArrayAdapter<Article> adapter;
 
+    private HashMap<Long, Purchase> purchases = new HashMap<Long, Purchase>();
+
+    private Customer customer;
+    private Handler handler = new Handler();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_customer);
+        setContentView(R.layout.activity_article);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -43,7 +60,7 @@ public class ArticleActivity extends AppCompatActivity {
         });
 
         GridView articleGrid = (GridView) findViewById(R.id.articleGrid);
-        adapter = new ArticleAdapter(this, android.R.layout.simple_list_item_1, articles);
+        adapter = new ArticleAdapter(this, android.R.layout.simple_list_item_1, articles, purchases, this);
         articleGrid.setAdapter(adapter);
 
         articleGrid.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -54,13 +71,47 @@ public class ArticleActivity extends AppCompatActivity {
             }
         });
 
+        Long customerId = getIntent().getLongExtra(CUSTOMER_ID_EXTRA, -1);
+        customer = KioskDaoFactory.getInstance(this).getExtendedCustomerDao().getCustomerById(customerId);
+        setTitle(customer.getName());
+
         updateUi();
+
+        timeoutExit();
+    }
+
+    private void timeoutExit() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                ArticleActivity.this.finish();
+            }
+        }, 60000);
     }
 
     private void updateUi() {
 
         articles.clear();
         articles.addAll(KioskDaoFactory.getInstance(this).getExtendedArticleDao().getAllArticles());
+
+        // initalize purchases if necessary
+
+        ExtendedPurchaseDao extendedPurchaseDao = KioskDaoFactory.getInstance(this).getExtendedPurchaseDao();
+        purchases.clear();
+        for (Article article : articles) {
+            Purchase purchase  = extendedPurchaseDao.getPurchaseByCustomerAndArticle(customer.getId(), article.getId());
+            if (purchase == null) {
+                Purchase newPurchase = new Purchase();
+                newPurchase.setArticleId(article.getId());
+                newPurchase.setCustomerId(customer.getId());
+                newPurchase.setAmount(0);
+                extendedPurchaseDao.insertOrReplace(newPurchase);
+
+                purchase = extendedPurchaseDao.getPurchaseByCustomerAndArticle(customer.getId(), article.getId());
+            }
+
+            purchases.put(article.getId(), purchase);
+        }
 
         adapter.notifyDataSetChanged();
     }
@@ -120,14 +171,57 @@ public class ArticleActivity extends AppCompatActivity {
 
     private static class ArticleAdapter extends ArrayAdapter<Article> {
 
-        public ArticleAdapter(Context context, int resource, List<Article> articles) {
+        private HashMap<Long, Purchase> purchases;
+        private ArticleActivity activity;
+
+        public ArticleAdapter(Context context, int resource, List<Article> articles, HashMap<Long, Purchase> purchases, ArticleActivity activity) {
             super(context, resource, articles);
+
+            this.purchases = purchases;
+            this.activity = activity;
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.article_grid_item, parent, false);
+            }
 
-            return super.getView(position, convertView, parent);
+            Article article = getItem(position);
+            final Purchase purchase = purchases.get(article.getId());
+
+            TextView name = (TextView) convertView.findViewById(R.id.name);
+            TextView price = (TextView) convertView.findViewById(R.id.price);
+            TextView purchases = (TextView) convertView.findViewById(R.id.purchases);
+
+            name.setText(article.getName());
+            DecimalFormat format = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.GERMANY));
+            price.setText(format.format(article.getPrice()));
+            purchases.setText("" + purchase.getAmount());
+
+            convertView.findViewById(R.id.add).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    purchase.setAmount(purchase.getAmount() + 1);
+                    KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().insertOrReplace(purchase);
+
+                    activity.updateUi();
+                }
+            });
+
+            convertView.findViewById(R.id.remove).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (purchase.getAmount() > 0) {
+                        purchase.setAmount(purchase.getAmount() - 1);
+                        KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().insertOrReplace(purchase);
+
+                        activity.updateUi();
+                    }
+                }
+            });
+
+            return convertView;
         }
     }
 

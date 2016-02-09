@@ -73,6 +73,8 @@ public class KioskDaoGenerator {
     private static Entity createPurchaseEntity(Schema schema, Entity article, Entity customer) {
         Entity purchase = schema.addEntity("Purchase");
 
+        purchase.addLongProperty("id").primaryKey().autoincrement();
+
         purchase.addIntProperty("amount");
         Property articleProp = purchase.addLongProperty("articleId").getProperty();
         Property customerProp = purchase.addLongProperty("customerId").getProperty();
