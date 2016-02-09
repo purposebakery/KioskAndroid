@@ -2,8 +2,10 @@ package com.techlung.kiosk;
 
 import java.lang.reflect.Array;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
@@ -11,12 +13,14 @@ import java.util.zip.ZipFile;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
+import android.support.v7.app.AlertDialog;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 
@@ -45,6 +49,26 @@ public final class Utils {
         return dp;
     }
 
+    public static void clearPurchases(final Context context) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(R.string.clear_question);
+        builder.setNegativeButton(R.string.alert_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.setPositiveButton(R.string.alert_yes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                KioskDaoFactory.getInstance(context).getExtendedPurchaseDao().deleteAll();
+                dialog.dismiss();
+            }
+        });
+        builder.show();
+    }
+
     public static void doPayment(Activity activity) {
         KioskDaoFactory factory = KioskDaoFactory.getInstance(activity);
         ExtendedCustomerDao extendedCustomerDao = factory.getExtendedCustomerDao();
@@ -55,23 +79,36 @@ public final class Utils {
         StringBuffer entireSummary = new StringBuffer();
         List<String> customerMails = new ArrayList<String>();
 
+        DecimalFormat format = new DecimalFormat("0.00");
+
         try {
             for (Customer customer : extendedCustomerDao.getAllCustomers()) {
-                customerMails.add(customer.getEmail());
 
-                entireSummary.append("----------------------------------" + "\n" + customer.getName() + "\n" + "----------------------------------");
 
                 List<Purchase> purchaseList = customer.getPurchaseList();
                 float sum = 0f;
+                StringBuffer purchaseSummary = new StringBuffer();
                 for (Purchase purchase : purchaseList) {
-                    Article article = purchase.getArticle();
-                    sum += purchase.getAmount() * article.getPrice();
+                    if (purchase.getAmount() > 0) {
+                        Article article = purchase.getArticle();
+                        if (article == null) {
+                            continue;
+                        }
+                        sum += purchase.getAmount() * article.getPrice();
 
-                    entireSummary.append(article.getName() + "("+ article.getPrice() +" EUR)" + " x " + purchase.getAmount() + " = " + purchase.getAmount() * article.getPrice() + " EUR\n");
+                        purchaseSummary.append(article.getName() + " ("+ format.format(article.getPrice()) +" EUR)" + " x " + purchase.getAmount() + " = " + format.format(purchase.getAmount() * article.getPrice()) + " EUR\n");
+                    }
                 }
-                entireSummary.append("----------------------------------" + "\n" + "                            " + sum + " EUR" + "\n\n\n");
 
-                shortSummary.append(customer.getName() + ": " + sum + " EUR\n");
+                if (sum != 0) {
+                    customerMails.add(customer.getEmail());
+
+                    entireSummary.append("---------------------------------- " + customer.getName() + " ----------------------------------" + "\n");
+                    entireSummary.append(purchaseSummary);
+                    entireSummary.append("----------------------------------" + "\n" + "SUMME: " + format.format(sum) + " EUR" + "\n\n\n");
+
+                    shortSummary.append(customer.getName() + ": " + format.format(sum) + " EUR\n");
+                }
 
             }
         } catch (Exception e) {
@@ -80,12 +117,15 @@ public final class Utils {
         }
 
         // create mail
-        Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
-        emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, customerMails.toArray(new String[customerMails.size()]));
-        emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, activity.getString(R.string.action_send_subject));
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
-        String emailBody = activity.getString(R.string.action_send_message)+"\n\n" + shortSummary + "\n\n" + "----------------------------------" + "\n\n" + entireSummary + activity.getString(R.string.action_send_bye);
-        emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, emailBody);
+        Intent emailIntent = new Intent(Intent.ACTION_SEND);
+        emailIntent.setType("text/plain");
+        emailIntent.putExtra(Intent.EXTRA_EMAIL, customerMails.toArray(new String[customerMails.size()]));
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT, activity.getString(R.string.action_send_subject) + " " + dateFormat.format(new Date()));
+
+        String emailBody = activity.getString(R.string.action_send_message)+"\n\n" + shortSummary + "\n\n" + "################## DETAILS ##################" + "\n\n" + entireSummary + activity.getString(R.string.action_send_bye);
+        emailIntent.putExtra(Intent.EXTRA_TEXT, emailBody);
 
         activity.startActivity(Intent.createChooser(emailIntent, activity.getString(R.string.action_send)));
     }

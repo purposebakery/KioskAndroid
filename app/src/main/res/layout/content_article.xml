@@ -16,7 +16,11 @@
     <GridView
         android:id="@+id/articleGrid"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:numColumns="auto_fit"
+        android:columnWidth="190dp"
+        android:stretchMode="columnWidth" >
     </GridView>
 
 

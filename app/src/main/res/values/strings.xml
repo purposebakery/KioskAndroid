@@ -3,6 +3,7 @@
     <string name="alert_ok">OK</string>
     <string name="alert_cancel">Abbrechen</string>
     <string name="alert_delete">Löschen</string>
+    <string name="alert_yes">Ja</string>
 
     <string name="app_name">Kiosk</string>
 
@@ -19,9 +20,11 @@
 
     <string name="action_send">Rechnung verschicken</string>
     <string name="action_send_owner_mail">oliver.metz@bertelsmann.de</string>
-    <string name="action_send_subject">Kiosk Rechnung</string>
+    <string name="action_send_subject">Kiosk Rechnung </string>
     <string name="action_send_message">Hallo zusammen, \nbitte begleicht zeitnah euer kiosk-konto :) </string>
     <string name="action_send_bye">Besten Gruß\neuer Kiosk</string>
+
+    <string name="clear_question">Alle Einkäufe zurücksetzen?</string>
 
     <string name="title_activity_main">Kiosk Peaches</string>
 

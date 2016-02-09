@@ -91,6 +91,9 @@ public class CustomerActivity extends AppCompatActivity {
         if (id == R.id.pay) {
             Utils.doPayment(this);
             return true;
+        } else if (id == R.id.restore) {
+            Utils.clearPurchases(this);
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -145,8 +148,15 @@ public class CustomerActivity extends AppCompatActivity {
             }
         });
 
+        builder.setNegativeButton(R.string.alert_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
         if (!createNew) {
-            builder.setNegativeButton(R.string.alert_delete, new DialogInterface.OnClickListener() {
+            builder.setNeutralButton(R.string.alert_delete, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     KioskDaoFactory.getInstance(CustomerActivity.this).getExtendedCustomerDao().delete(customer);

@@ -3,12 +3,17 @@ package com.techlung.kiosk;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
@@ -50,6 +55,8 @@ public class ArticleActivity extends AppCompatActivity {
         setContentView(R.layout.activity_article);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
 
         FloatingActionButton addCustomer = (FloatingActionButton) findViewById(R.id.addArticle);
         addCustomer.setOnClickListener(new View.OnClickListener() {
@@ -63,14 +70,6 @@ public class ArticleActivity extends AppCompatActivity {
         adapter = new ArticleAdapter(this, android.R.layout.simple_list_item_1, articles, purchases, this);
         articleGrid.setAdapter(adapter);
 
-        articleGrid.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                editArticle(articles.get(position), false);
-                return true;
-            }
-        });
-
         Long customerId = getIntent().getLongExtra(CUSTOMER_ID_EXTRA, -1);
         customer = KioskDaoFactory.getInstance(this).getExtendedCustomerDao().getCustomerById(customerId);
         setTitle(customer.getName());
@@ -79,6 +78,19 @@ public class ArticleActivity extends AppCompatActivity {
 
         timeoutExit();
     }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
+            //startActivity(new Intent(getActivity(), SettingsActivity.class));
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 
     private void timeoutExit() {
         handler.postDelayed(new Runnable() {
@@ -120,9 +132,10 @@ public class ArticleActivity extends AppCompatActivity {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         if (createNew) {
-            builder.setTitle(R.string.customer_create);
+            builder.setTitle(R.string.article_create);
+            article.setPrice(0f);
         } else {
-            builder.setTitle(R.string.customer_edit);
+            builder.setTitle(R.string.article_edit);
         }
 
         LinearLayout layout = new LinearLayout(this);
@@ -138,7 +151,8 @@ public class ArticleActivity extends AppCompatActivity {
         price.setInputType(EditorInfo.TYPE_NUMBER_FLAG_DECIMAL);
         layout.addView(price);
         price.setHint(getString(R.string.article_modify_price));
-        price.setText(Float.toString(article.getPrice()));
+        DecimalFormat format = new DecimalFormat("0.00");
+        price.setText(format.format(article.getPrice()));
 
         builder.setView(layout);
 
@@ -146,7 +160,7 @@ public class ArticleActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 article.setName(name.getText().toString());
-                article.setPrice(Float.parseFloat(price.getText().toString()));
+                article.setPrice(Float.parseFloat(price.getText().toString().replace(",", ".")));
 
                 KioskDaoFactory.getInstance(ArticleActivity.this).getExtendedArticleDao().insertOrReplace(article);
 
@@ -154,11 +168,18 @@ public class ArticleActivity extends AppCompatActivity {
             }
         });
 
+        builder.setNegativeButton(R.string.alert_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
         if (!createNew) {
-            builder.setNegativeButton(R.string.alert_delete, new DialogInterface.OnClickListener() {
+            builder.setNeutralButton(R.string.alert_delete, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    KioskDaoFactory.getInstance(ArticleActivity.this).getExtendedArticleDao().delete(articles.get(which));
+                    KioskDaoFactory.getInstance(ArticleActivity.this).getExtendedArticleDao().delete(article);
 
                     updateUi();
                 }
@@ -169,7 +190,7 @@ public class ArticleActivity extends AppCompatActivity {
 
     }
 
-    private static class ArticleAdapter extends ArrayAdapter<Article> {
+    private class ArticleAdapter extends ArrayAdapter<Article> {
 
         private HashMap<Long, Purchase> purchases;
         private ArticleActivity activity;
@@ -187,7 +208,7 @@ public class ArticleActivity extends AppCompatActivity {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.article_grid_item, parent, false);
             }
 
-            Article article = getItem(position);
+            final Article article = getItem(position);
             final Purchase purchase = purchases.get(article.getId());
 
             TextView name = (TextView) convertView.findViewById(R.id.name);
@@ -195,8 +216,16 @@ public class ArticleActivity extends AppCompatActivity {
             TextView purchases = (TextView) convertView.findViewById(R.id.purchases);
 
             name.setText(article.getName());
+
+            convertView.findViewById(R.id.edit).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ArticleActivity.this.editArticle(article, false);
+                }
+            });
+
             DecimalFormat format = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.GERMANY));
-            price.setText(format.format(article.getPrice()));
+            price.setText(format.format(article.getPrice()) + " EUR");
             purchases.setText("" + purchase.getAmount());
 
             convertView.findViewById(R.id.add).setOnClickListener(new View.OnClickListener() {
@@ -206,6 +235,8 @@ public class ArticleActivity extends AppCompatActivity {
                     KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().insertOrReplace(purchase);
 
                     activity.updateUi();
+
+                    ArticleAdapter.this.notifyUserInput();
                 }
             });
 
@@ -217,11 +248,28 @@ public class ArticleActivity extends AppCompatActivity {
                         KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().insertOrReplace(purchase);
 
                         activity.updateUi();
+
+                        ArticleAdapter.this.notifyUserInput();
                     }
                 }
             });
 
             return convertView;
+        }
+
+        public void notifyUserInput() {
+            Vibrator v = (Vibrator) this.getContext().getSystemService(Context.VIBRATOR_SERVICE);
+            if (v.hasVibrator()) {
+                v.vibrate(500);
+            } else {
+                try {
+                    Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                    Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
+                    r.play();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
