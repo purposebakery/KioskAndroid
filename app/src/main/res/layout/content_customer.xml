@@ -12,9 +12,29 @@
     tools:context=".CustomerActivity"
     tools:showIn="@layout/activity_customer">
 
+    <RelativeLayout
+        android:id="@+id/newsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:padding="16dp"
+        android:elevation="10dp"
+        android:background="@color/colorPassive">
+
+        <TextView
+            android:id="@+id/news"
+            android:text="Pro Artikel werden 5 Cent an World Vision gespendet.\n+Der beste Käufer bekommt am Ende des Monats einen Artikel gratis!"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+            android:layout_centerInParent="true"/>
+
+    </RelativeLayout>
 
     <ListView
         android:id="@+id/customerList"
+        android:layout_below="@+id/newsContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
     </ListView>

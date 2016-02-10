@@ -1,6 +1,7 @@
 package com.techlung.kiosk;
 
 import android.app.AlertDialog;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -16,7 +17,9 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 
+import com.pixplicity.easyprefs.library.Prefs;
 import com.techlung.kiosk.greendao.extended.KioskDaoFactory;
 import com.techlung.kiosk.greendao.generated.Customer;
 
@@ -26,6 +29,7 @@ import java.util.List;
 public class CustomerActivity extends AppCompatActivity {
 
 
+    public static final String NEWS = "NEWS";
     private List<Customer> customers = new ArrayList<Customer>();
     private List<String> customersNames = new ArrayList<String>();
     private ArrayAdapter<String> adapter;
@@ -36,6 +40,13 @@ public class CustomerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_customer);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        new Prefs.Builder()
+                .setContext(this)
+                .setMode(ContextWrapper.MODE_PRIVATE)
+                .setPrefsName(this.getPackageName())
+                .setUseDefaultSharedPreference(true)
+                .build();
 
         FloatingActionButton addCustomer = (FloatingActionButton) findViewById(R.id.addCustomer);
         addCustomer.setOnClickListener(new View.OnClickListener() {
@@ -67,6 +78,15 @@ public class CustomerActivity extends AppCompatActivity {
             }
         });
 
+        final TextView news = (TextView) findViewById(R.id.news);
+        news.setText(Prefs.getString(NEWS, "Pro Artikel wird 5 Cent an World Vision e.V. gespendet\n\nBester Kunde kriegt am Ende des Monats ein Artikel gratis!"));
+        findViewById(R.id.newsContainer).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                changeNews(news);
+            }
+        });
+
         Utils.initData(this);
 
         updateUi();
@@ -89,7 +109,7 @@ public class CustomerActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.pay) {
-            Utils.doPayment(this);
+            Utils.getDonationAmountAndDoPayment(this);
             return true;
         } else if (id == R.id.restore) {
             Utils.clearPurchases(this);
@@ -97,6 +117,36 @@ public class CustomerActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void changeNews(final TextView newsTextView) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setPadding(Utils.convertDpToPixel(16, this), 0, Utils.convertDpToPixel(16, this), 0);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        final EditText news = new EditText(this);
+        layout.addView(news);
+        news.setText(newsTextView.getText());
+
+        builder.setView(layout);
+        builder.setTitle(R.string.news_title);
+        builder.setNegativeButton(R.string.alert_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.setPositiveButton(R.string.alert_ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                newsTextView.setText(news.getText());
+                Prefs.putString(NEWS, news.getText().toString());
+            }
+        });
+
+        builder.show();
     }
 
     private void updateUi() {

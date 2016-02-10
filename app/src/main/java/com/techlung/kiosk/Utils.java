@@ -23,7 +23,10 @@ import android.os.Build.VERSION_CODES;
 import android.support.v7.app.AlertDialog;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 
+import com.pixplicity.easyprefs.library.Prefs;
 import com.techlung.kiosk.greendao.extended.ExtendedArticleDao;
 import com.techlung.kiosk.greendao.extended.ExtendedCustomerDao;
 import com.techlung.kiosk.greendao.extended.ExtendedPurchaseDao;
@@ -49,6 +52,35 @@ public final class Utils {
         return dp;
     }
 
+    public static void getDonationAmountAndDoPayment(final Activity activity) {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(activity);
+
+        LinearLayout layout = new LinearLayout(activity);
+        layout.setPadding(Utils.convertDpToPixel(16, activity), 0, Utils.convertDpToPixel(16, activity), 0);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        final EditText donation = new EditText(activity);
+        layout.addView(donation);
+        donation.setText("0,05");
+
+        builder.setView(layout);
+        builder.setTitle(R.string.action_send_donation);
+        builder.setNegativeButton(R.string.alert_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.setPositiveButton(R.string.alert_ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                doPayment(activity, Float.parseFloat(donation.getText().toString().replace(",", ".")));
+            }
+        });
+
+        builder.show();
+    }
+
     public static void clearPurchases(final Context context) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -69,7 +101,7 @@ public final class Utils {
         builder.show();
     }
 
-    public static void doPayment(Activity activity) {
+    public static void doPayment(Activity activity, float donation) {
         KioskDaoFactory factory = KioskDaoFactory.getInstance(activity);
         ExtendedCustomerDao extendedCustomerDao = factory.getExtendedCustomerDao();
         ExtendedArticleDao extendedArticleDao = factory.getExtendedArticleDao();
@@ -82,8 +114,12 @@ public final class Utils {
         DecimalFormat format = new DecimalFormat("0.00");
 
         try {
+            int donationCounter = 0;
             for (Customer customer : extendedCustomerDao.getAllCustomers()) {
 
+                if (customer.getName().startsWith("#"))  {
+                    continue;
+                }
 
                 List<Purchase> purchaseList = customer.getPurchaseList();
                 float sum = 0f;
@@ -95,6 +131,7 @@ public final class Utils {
                             continue;
                         }
                         sum += purchase.getAmount() * article.getPrice();
+                        donationCounter += purchase.getAmount();
 
                         purchaseSummary.append(article.getName() + " ("+ format.format(article.getPrice()) +" EUR)" + " x " + purchase.getAmount() + " = " + format.format(purchase.getAmount() * article.getPrice()) + " EUR\n");
                     }
@@ -110,6 +147,11 @@ public final class Utils {
                     shortSummary.append(customer.getName() + ": " + format.format(sum) + " EUR\n");
                 }
 
+
+            }
+
+            if (donationCounter != 0) {
+                shortSummary.append("\nSpende: " + donationCounter + " x " + format.format(donation) + " = " + format.format(donationCounter * donation) + "\n");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -136,7 +178,7 @@ public final class Utils {
         ExtendedArticleDao extendedArticleDao = factory.getExtendedArticleDao();
 
         if (extendedCustomerDao.getCount() == 0) {
-            extendedCustomerDao.insertOrReplace(createCustomer("Oliver", "oliver.metz@bertelsmann.de"));
+            extendedCustomerDao.insertOrReplace(createCustomer("## BAR ##", "oliver.metz@bertelsmann.de"));
             extendedCustomerDao.insertOrReplace(createCustomer("Thomas", "thomas.hanning@bertelsmann.de"));
             extendedCustomerDao.insertOrReplace(createCustomer("Robert", "robert.strickmann@bertelsmann.de"));
             extendedCustomerDao.insertOrReplace(createCustomer("Willem", "willem.terhoerst@bertelsmann.de"));
@@ -145,11 +187,18 @@ public final class Utils {
         }
 
         if (extendedArticleDao.getCount() == 0) {
-            extendedArticleDao.insertOrReplace(createArticle("Snickers",0.35f));
-            extendedArticleDao.insertOrReplace(createArticle("Kinderriegel",0.30f));
-            extendedArticleDao.insertOrReplace(createArticle("Müsliriegel",0.30f));
-            extendedArticleDao.insertOrReplace(createArticle("Effect Energy",1.00f));
+            extendedArticleDao.insertOrReplace(createArticle("Kinderriegel",0.25f));
+            extendedArticleDao.insertOrReplace(createArticle("Müsliriegel",0.25f));
+            extendedArticleDao.insertOrReplace(createArticle("Snickers",0.30f));
+            extendedArticleDao.insertOrReplace(createArticle("Balisto",0.30f));
+            extendedArticleDao.insertOrReplace(createArticle("Früchteriegel",0.30f));
+            extendedArticleDao.insertOrReplace(createArticle("Koppers",0.35f));
+            extendedArticleDao.insertOrReplace(createArticle("Milky Way",0.35f));
+            extendedArticleDao.insertOrReplace(createArticle("Twix",0.40f));
+            extendedArticleDao.insertOrReplace(createArticle("Pickup",0.45f));
+            extendedArticleDao.insertOrReplace(createArticle("Kitkat",0.45f));
             extendedArticleDao.insertOrReplace(createArticle("Erdnüsse",0.60f));
+            extendedArticleDao.insertOrReplace(createArticle("Effect Energy",1.00f));
         }
     }
 

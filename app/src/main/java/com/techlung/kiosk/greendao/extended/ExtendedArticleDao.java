@@ -17,7 +17,7 @@ public class ExtendedArticleDao {
 
     public List<Article> getAllArticles() {
         QueryBuilder<Article> queryBuilder = dao.queryBuilder();
-        queryBuilder.orderAsc(ArticleDao.Properties.Name);
+        queryBuilder.orderAsc(ArticleDao.Properties.Price);
         return queryBuilder.list();
     }
 

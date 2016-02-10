@@ -12,14 +12,15 @@
     <string name="customer_modify_name">Name</string>
     <string name="customer_modify_mail">E-Mail</string>
 
+    <string name="news_title">Nachrichten</string>
 
     <string name="article_create">Artikel erstellen</string>
     <string name="article_edit">Artikel bearbeiten</string>
     <string name="article_modify_name">Name</string>
     <string name="article_modify_price">Preis</string>
 
+    <string name="action_send_donation">Spende</string>
     <string name="action_send">Rechnung verschicken</string>
-    <string name="action_send_owner_mail">oliver.metz@bertelsmann.de</string>
     <string name="action_send_subject">Kiosk Rechnung </string>
     <string name="action_send_message">Hallo zusammen, \nbitte begleicht zeitnah euer kiosk-konto :) </string>
     <string name="action_send_bye">Besten Gruß\neuer Kiosk</string>
