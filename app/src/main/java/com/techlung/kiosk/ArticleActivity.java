@@ -225,7 +225,7 @@ public class ArticleActivity extends AppCompatActivity {
             });
 
             DecimalFormat format = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.GERMANY));
-            price.setText(format.format(article.getPrice()) + " EUR");
+            price.setText(format.format(article.getPrice()) + " " + getString(R.string.sym_euro));
             purchases.setText("" + purchase.getAmount());
 
             convertView.findViewById(R.id.add).setOnClickListener(new View.OnClickListener() {

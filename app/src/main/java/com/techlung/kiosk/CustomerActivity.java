@@ -1,16 +1,21 @@
 package com.techlung.kiosk;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.LayoutRes;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -22,7 +27,9 @@ import android.widget.TextView;
 import com.pixplicity.easyprefs.library.Prefs;
 import com.techlung.kiosk.greendao.extended.KioskDaoFactory;
 import com.techlung.kiosk.greendao.generated.Customer;
+import com.techlung.kiosk.greendao.generated.Purchase;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,8 +38,7 @@ public class CustomerActivity extends AppCompatActivity {
 
     public static final String NEWS = "NEWS";
     private List<Customer> customers = new ArrayList<Customer>();
-    private List<String> customersNames = new ArrayList<String>();
-    private ArrayAdapter<String> adapter;
+    private ArrayAdapter<Customer> adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +63,7 @@ public class CustomerActivity extends AppCompatActivity {
         });
 
         ListView customerListView = (ListView) findViewById(R.id.customerList);
-        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, customersNames);
+        adapter = new CustomerAdapter(this, R.layout.customer_list_item, customers);
         customerListView.setAdapter(adapter);
 
         customerListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -99,6 +105,11 @@ public class CustomerActivity extends AppCompatActivity {
         return true;
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateUi();
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -150,12 +161,8 @@ public class CustomerActivity extends AppCompatActivity {
     }
 
     private void updateUi() {
-        customers = KioskDaoFactory.getInstance(this).getExtendedCustomerDao().getAllCustomers();
-
-        customersNames.clear();
-        for (Customer customer : customers) {
-            customersNames.add(customer.getName());
-        }
+        customers.clear();
+        customers.addAll(KioskDaoFactory.getInstance(this).getExtendedCustomerDao().getAllCustomers());
 
         adapter.notifyDataSetChanged();
     }
@@ -218,6 +225,36 @@ public class CustomerActivity extends AppCompatActivity {
 
         builder.show();
 
+    }
+
+    private class CustomerAdapter extends ArrayAdapter<Customer> {
+        CustomerAdapter(Context context, @LayoutRes int resource, @NonNull List<Customer> objects) {
+            super(context, resource, objects);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.customer_list_item, parent, false);
+            }
+
+            TextView name = (TextView) convertView.findViewById(R.id.customer_name);
+            TextView dept = (TextView) convertView.findViewById(R.id.customer_dept);
+
+            Customer customer = getItem(position);
+
+            name.setText(customer.getName());
+
+            float sum = 0;
+            DecimalFormat format = new DecimalFormat("0.00");
+            List<Purchase> purchases = KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().getPurchaseByCustomer(customer.getId());
+            for (Purchase purchase : purchases) {
+                sum += (float) purchase.getAmount() * purchase.getArticle().getPrice();
+            }
+            dept.setText(format.format(sum) + " " + getString(R.string.sym_euro));
+
+            return convertView;
+        }
     }
 
 }

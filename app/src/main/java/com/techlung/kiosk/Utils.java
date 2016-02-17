@@ -133,7 +133,7 @@ public final class Utils {
                         sum += purchase.getAmount() * article.getPrice();
                         donationCounter += purchase.getAmount();
 
-                        purchaseSummary.append(article.getName() + " ("+ format.format(article.getPrice()) +" EUR)" + " x " + purchase.getAmount() + " = " + format.format(purchase.getAmount() * article.getPrice()) + " EUR\n");
+                        purchaseSummary.append(article.getName() + " ("+ format.format(article.getPrice()) +" "+activity.getString(R.string.sym_euro)+ ")" + " x " + purchase.getAmount() + " = " + format.format(purchase.getAmount() * article.getPrice()) + " "+activity.getString(R.string.sym_euro)+"\n");
                     }
                 }
 
@@ -142,9 +142,9 @@ public final class Utils {
 
                     entireSummary.append("---------------------------------- " + customer.getName() + " ----------------------------------" + "\n");
                     entireSummary.append(purchaseSummary);
-                    entireSummary.append("----------------------------------" + "\n" + "SUMME: " + format.format(sum) + " EUR" + "\n\n\n");
+                    entireSummary.append("----------------------------------" + "\n" + "SUMME: " + format.format(sum) + " "+ activity.getString(R.string.sym_euro) + "\n\n\n");
 
-                    shortSummary.append(customer.getName() + ": " + format.format(sum) + " EUR\n");
+                    shortSummary.append(customer.getName() + ": " + format.format(sum) + " "+activity.getString(R.string.sym_euro)+"\n");
                 }
 
 

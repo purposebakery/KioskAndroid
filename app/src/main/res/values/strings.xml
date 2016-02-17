@@ -5,6 +5,9 @@
     <string name="alert_delete">Löschen</string>
     <string name="alert_yes">Ja</string>
 
+    <string name="sym_euro">€</string>
+    <string name="sum">Summe</string>
+
     <string name="app_name">Kiosk</string>
 
     <string name="customer_create">Kunden erstellen</string>

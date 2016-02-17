@@ -22,6 +22,12 @@ public class ExtendedPurchaseDao {
         return queryBuilder.unique();
     }
 
+    public List<Purchase> getPurchaseByCustomer(Long customerId) {
+        QueryBuilder<Purchase> queryBuilder = dao.queryBuilder();
+        queryBuilder.where(PurchaseDao.Properties.CustomerId.eq(customerId));
+        return queryBuilder.list();
+    }
+
     public List<Purchase> getAllPurchases() {
         QueryBuilder<Purchase> queryBuilder = dao.queryBuilder();
         return queryBuilder.list();
