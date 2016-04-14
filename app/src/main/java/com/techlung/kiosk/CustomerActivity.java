@@ -176,22 +176,15 @@ public class CustomerActivity extends AppCompatActivity {
             builder.setTitle(R.string.customer_edit);
         }
 
-        LinearLayout layout = new LinearLayout(this);
-        layout.setPadding(Utils.convertDpToPixel(16, this), 0, Utils.convertDpToPixel(16, this), 0);
-        layout.setOrientation(LinearLayout.VERTICAL);
+        View content = LayoutInflater.from(this).inflate(R.layout.customer_add, null, false);
 
-        final EditText name = new EditText(this);
-        layout.addView(name);
+        final EditText name = (EditText) content.findViewById(R.id.input_name);
         name.setText(customer.getName());
-        name.setHint(getString(R.string.customer_modify_name));
 
-        final EditText email = new EditText(this);
-        email.setInputType(EditorInfo.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-        layout.addView(email);
-        email.setHint(getString(R.string.customer_modify_mail));
+        final EditText email = (EditText) content.findViewById(R.id.input_email);
         email.setText(customer.getEmail());
 
-        builder.setView(layout);
+        builder.setView(content);
 
         builder.setPositiveButton(R.string.alert_ok, new DialogInterface.OnClickListener() {
             @Override
