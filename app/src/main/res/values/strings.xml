@@ -22,14 +22,6 @@
     <string name="article_modify_name">Name</string>
     <string name="article_modify_price">Preis</string>
 
-    <string name="action_send_donation">Spende</string>
-    <string name="action_send">Rechnung verschicken</string>
-    <string name="action_send_subject">Kiosk Rechnung </string>
-    <string name="action_send_message">Hallo zusammen, \nbitte begleicht zeitnah euer kiosk-konto :) </string>
-    <string name="action_send_bye">Besten Gruß\neuer Kiosk</string>
-
-    <string name="clear_question">Alle Einkäufe zurücksetzen?</string>
-
     <string name="title_activity_main">Kiosk Peaches</string>
 
 </resources>

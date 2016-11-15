@@ -11,8 +11,7 @@ public class FileHandler {
     private static File getDbFolder(Context context) {
         if (IS_DB_SAVED_EXTERN) {
             return context.getExternalFilesDir(null);
-        }
-        else {
+        } else {
             return context.getFilesDir();
         }
     }

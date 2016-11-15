@@ -17,11 +17,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.GridView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.techlung.kiosk.greendao.extended.ExtendedPurchaseDao;
@@ -66,8 +65,8 @@ public class ArticleActivity extends AppCompatActivity {
             }
         });
 
-        GridView articleGrid = (GridView) findViewById(R.id.articleGrid);
-        adapter = new ArticleAdapter(this, android.R.layout.simple_list_item_1, articles, purchases, this);
+        ListView articleGrid = (ListView) findViewById(R.id.articleList);
+        adapter = new ArticleAdapter(this, R.layout.article_list_item, articles, purchases, this);
         articleGrid.setAdapter(adapter);
 
         Long customerId = getIntent().getLongExtra(CUSTOMER_ID_EXTRA, -1);
@@ -111,7 +110,7 @@ public class ArticleActivity extends AppCompatActivity {
         ExtendedPurchaseDao extendedPurchaseDao = KioskDaoFactory.getInstance(this).getExtendedPurchaseDao();
         purchases.clear();
         for (Article article : articles) {
-            Purchase purchase  = extendedPurchaseDao.getPurchaseByCustomerAndArticle(customer.getId(), article.getId());
+            Purchase purchase = extendedPurchaseDao.getPurchaseByCustomerAndArticle(customer.getId(), article.getId());
             if (purchase == null) {
                 Purchase newPurchase = new Purchase();
                 newPurchase.setArticleId(article.getId());
@@ -205,7 +204,7 @@ public class ArticleActivity extends AppCompatActivity {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null) {
-                convertView = LayoutInflater.from(getContext()).inflate(R.layout.article_grid_item, parent, false);
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.article_list_item, parent, false);
             }
 
             final Article article = getItem(position);
@@ -213,54 +212,38 @@ public class ArticleActivity extends AppCompatActivity {
 
             TextView name = (TextView) convertView.findViewById(R.id.name);
             TextView price = (TextView) convertView.findViewById(R.id.price);
-            TextView purchases = (TextView) convertView.findViewById(R.id.purchases);
 
             name.setText(article.getName());
 
-            convertView.findViewById(R.id.edit).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    ArticleActivity.this.editArticle(article, false);
-                }
-            });
-
             DecimalFormat format = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.GERMANY));
             price.setText(format.format(article.getPrice()) + " " + getString(R.string.sym_euro));
-            purchases.setText("" + purchase.getAmount());
 
-            convertView.findViewById(R.id.add).setOnClickListener(new View.OnClickListener() {
+            convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     purchase.setAmount(purchase.getAmount() + 1);
                     KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().insertOrReplace(purchase);
-
-                    activity.updateUi();
-
-                    ArticleAdapter.this.notifyUserInput();
+                    onBackPressed();
+                   notifyUserInput();
                 }
             });
 
-            convertView.findViewById(R.id.remove).setOnClickListener(new View.OnClickListener() {
+            convertView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
-                public void onClick(View v) {
-                    if (purchase.getAmount() > 0) {
-                        purchase.setAmount(purchase.getAmount() - 1);
-                        KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().insertOrReplace(purchase);
-
-                        activity.updateUi();
-
-                        ArticleAdapter.this.notifyUserInput();
+                public boolean onLongClick(View v) {
+                    if (Utils.isAdmin) {
+                        ArticleActivity.this.editArticle(article, false);
                     }
+                    return false;
                 }
             });
-
             return convertView;
         }
 
         public void notifyUserInput() {
             Vibrator v = (Vibrator) this.getContext().getSystemService(Context.VIBRATOR_SERVICE);
             if (v.hasVibrator()) {
-                v.vibrate(500);
+                v.vibrate(100);
             } else {
                 try {
                     Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);

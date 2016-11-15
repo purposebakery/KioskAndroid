@@ -11,18 +11,18 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.pixplicity.easyprefs.library.Prefs;
 import com.techlung.kiosk.greendao.extended.KioskDaoFactory;
@@ -39,6 +39,8 @@ public class CustomerActivity extends AppCompatActivity {
     public static final String NEWS = "NEWS";
     private List<Customer> customers = new ArrayList<Customer>();
     private ArrayAdapter<Customer> adapter;
+
+    private int adminCounter = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,15 +86,6 @@ public class CustomerActivity extends AppCompatActivity {
             }
         });
 
-        final TextView news = (TextView) findViewById(R.id.news);
-        news.setText(Prefs.getString(NEWS, "Pro Artikel wird 5 Cent an World Vision e.V. gespendet\n\nBester Kunde kriegt am Ende des Monats ein Artikel gratis!"));
-        findViewById(R.id.newsContainer).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                changeNews(news);
-            }
-        });
-
         Utils.initData(this);
 
         updateUi();
@@ -101,14 +94,38 @@ public class CustomerActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.customer_menu, menu);
-        return true;
+
+        if (Utils.isAdmin) {
+            getMenuInflater().inflate(R.menu.customer_menu, menu);
+            return true;
+        }
+        return false;
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         updateUi();
+    }
+
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            adminCounter++;
+            if (adminCounter == 10) {
+                adminCounter = 0;
+                Utils.isAdmin = !Utils.isAdmin;
+
+                if (Utils.isAdmin) {
+                    Toast.makeText(this, "Admin Mode", Toast.LENGTH_SHORT).show();
+                }
+
+                this.recreate();
+            }
+        }
+
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override
@@ -120,7 +137,7 @@ public class CustomerActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.pay) {
-            Utils.getDonationAmountAndDoPayment(this);
+            Utils.doPayment(this);
             return true;
         } else if (id == R.id.restore) {
             Utils.clearPurchases(this);
@@ -128,36 +145,6 @@ public class CustomerActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    private void changeNews(final TextView newsTextView) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        LinearLayout layout = new LinearLayout(this);
-        layout.setPadding(Utils.convertDpToPixel(16, this), 0, Utils.convertDpToPixel(16, this), 0);
-        layout.setOrientation(LinearLayout.VERTICAL);
-
-        final EditText news = new EditText(this);
-        layout.addView(news);
-        news.setText(newsTextView.getText());
-
-        builder.setView(layout);
-        builder.setTitle(R.string.news_title);
-        builder.setNegativeButton(R.string.alert_cancel, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        builder.setPositiveButton(R.string.alert_ok, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                newsTextView.setText(news.getText());
-                Prefs.putString(NEWS, news.getText().toString());
-            }
-        });
-
-        builder.show();
     }
 
     private void updateUi() {
@@ -245,6 +232,12 @@ public class CustomerActivity extends AppCompatActivity {
                 sum += (float) purchase.getAmount() * purchase.getArticle().getPrice();
             }
             dept.setText(format.format(sum) + " " + getString(R.string.sym_euro));
+
+            if (Utils.isAdmin) {
+                dept.setVisibility(View.VISIBLE);
+            } else {
+                dept.setVisibility(View.GONE);
+            }
 
             return convertView;
         }

@@ -4,6 +4,7 @@ package com.techlung.kiosk.greendao.generated;
 
 // KEEP INCLUDES - put your custom includes here
 // KEEP INCLUDES END
+
 /**
  * Entity mapped to table "ARTICLE".
  */

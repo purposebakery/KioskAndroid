@@ -4,7 +4,6 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-
 import com.techlung.kiosk.FileHandler;
 import com.techlung.kiosk.greendao.generated.ArticleDao;
 import com.techlung.kiosk.greendao.generated.CustomerDao;
@@ -18,16 +17,13 @@ import java.io.File;
  */
 public class KioskDaoFactory {
 
+    private static KioskDaoFactory instance;
     protected DaoMaster daoMaster;
     protected SQLiteDatabase db;
     private Context context;
-
-
     private ExtendedArticleDao extendedArticleDao;
     private ExtendedCustomerDao extendedCustomerDao;
     private ExtendedPurchaseDao extendedPurchaseDao;
-
-    private static KioskDaoFactory instance;
 
     // Bewegungsdaten
     public static KioskDaoFactory getInstance(Context context) {
@@ -43,8 +39,7 @@ public class KioskDaoFactory {
     public void reinitialiseDb() {
         if (db == null) {
             makeSureDbIsInitialised();
-        }
-        else {
+        } else {
             closeDb();
             makeSureDbIsInitialised();
         }
