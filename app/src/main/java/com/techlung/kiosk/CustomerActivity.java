@@ -192,7 +192,7 @@ public class CustomerActivity extends AppCompatActivity {
             }
         });
 
-        if (!createNew) {
+        if (!createNew && Utils.isAdmin) {
             builder.setNeutralButton(R.string.alert_delete, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -229,6 +229,9 @@ public class CustomerActivity extends AppCompatActivity {
             DecimalFormat format = new DecimalFormat("0.00");
             List<Purchase> purchases = KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().getPurchaseByCustomer(customer.getId());
             for (Purchase purchase : purchases) {
+                if (purchase.getArticle() == null) {
+                    continue;
+                }
                 sum += (float) purchase.getAmount() * purchase.getArticle().getPrice();
             }
             dept.setText(format.format(sum) + " " + getString(R.string.sym_euro));

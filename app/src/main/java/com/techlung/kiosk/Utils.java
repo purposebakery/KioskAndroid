@@ -94,9 +94,9 @@ public final class Utils {
 
                 if (sum != 0) {
 
-                    entireSummary.append("Zusammenfassung\n");
+                    entireSummary.append("------------------------------------------------------------------\nZUSAMMENFASSUNG\n------------------------------------------------------------------\n");
                     entireSummary.append(purchaseSummary);
-                    entireSummary.append("\n" + "SUMME: " + format.format(sum) + " " + activity.getString(R.string.sym_euro));
+                    entireSummary.append("------------------------------------------------------------------\n" + "SUMME: " + format.format(sum) + " " + activity.getString(R.string.sym_euro));
 
                     shortSummary.append("Betrag: " + format.format(sum) + " " + activity.getString(R.string.sym_euro));
 
@@ -109,9 +109,9 @@ public final class Utils {
                     emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Kiosk Rechnung " + dateFormat.format(new Date()));
 
                     String emailBody =
-                            "Hallo " + customer.getName() + "\n\n" + "bitte begleiche zeitnahe dein Rechung in Bar oder via PayPal: "
+                            "Hallo " + customer.getName() + "\n\n" + "vielen Dank für deinen Einkauf! Sag Bescheid falls irgendwas im Laden fehlt oder du irgendwelche speziellen Wünsche hast :). Deine Rechnung kannst du in Bar bei mir oder via PayPal begleichen: "
                                     + "\n\n" + shortSummary + "\n\n" + "https://www.paypal.me/OliverMetz/" + format.format(sum) + "\n\n" + entireSummary.toString()
-                                    + "\n\n" + "Besten Grüße\nOliver";
+                                    + "\n\n" + "Beste Grüße\nOliver";
                     emailIntent.putExtra(Intent.EXTRA_TEXT, emailBody);
 
                     activity.startActivity(emailIntent);
