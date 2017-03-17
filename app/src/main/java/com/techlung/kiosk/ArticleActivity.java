@@ -9,15 +9,16 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -32,6 +33,8 @@ import com.techlung.kiosk.greendao.generated.Purchase;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -57,7 +60,7 @@ public class ArticleActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 
-        FloatingActionButton addCustomer = (FloatingActionButton) findViewById(R.id.addArticle);
+        Button addCustomer = (Button) findViewById(R.id.addArticle);
         addCustomer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -122,7 +125,16 @@ public class ArticleActivity extends AppCompatActivity {
             }
 
             purchases.put(article.getId(), purchase);
+
+            article.setPurchaseCount(purchase.getAmount());
         }
+
+        Collections.sort(articles, new Comparator<Article>() {
+            @Override
+            public int compare(Article o1, Article o2) {
+                return Integer.valueOf(o2.getPurchaseCount()).compareTo(o1.getPurchaseCount());
+            }
+        });
 
         adapter.notifyDataSetChanged();
     }
@@ -174,7 +186,7 @@ public class ArticleActivity extends AppCompatActivity {
             }
         });
 
-        if (!createNew) {
+        if (!createNew && Utils.isAdmin) {
             builder.setNeutralButton(R.string.alert_delete, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -213,7 +225,11 @@ public class ArticleActivity extends AppCompatActivity {
             TextView name = (TextView) convertView.findViewById(R.id.name);
             TextView price = (TextView) convertView.findViewById(R.id.price);
 
-            name.setText(article.getName());
+            if (article.getPurchaseCount() > 0) {
+                name.setText(Html.fromHtml(article.getName() + " <small>(" + article.getPurchaseCount() + ")</small>"));
+            } else {
+                name.setText(article.getName());
+            }
 
             DecimalFormat format = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.GERMANY));
             price.setText(format.format(article.getPrice()) + " " + getString(R.string.sym_euro));
@@ -224,7 +240,7 @@ public class ArticleActivity extends AppCompatActivity {
                     purchase.setAmount(purchase.getAmount() + 1);
                     KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().insertOrReplace(purchase);
                     onBackPressed();
-                   notifyUserInput();
+                    notifyUserInput();
                 }
             });
 
@@ -237,6 +253,7 @@ public class ArticleActivity extends AppCompatActivity {
                     return false;
                 }
             });
+
             return convertView;
         }
 

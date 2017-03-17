@@ -31,6 +31,7 @@ public class Customer {
     private List<Purchase> purchaseList;
 
     // KEEP FIELDS - put your custom fields here
+    private float purchaseValueSum;
     // KEEP FIELDS END
 
     public Customer() {
@@ -135,6 +136,16 @@ public class Customer {
     }
 
     // KEEP METHODS - put your custom methods here
+
+    public float getPurchaseValueSum() {
+        return purchaseValueSum;
+    }
+
+    public void setPurchaseValueSum(float purchaseValueSum) {
+        this.purchaseValueSum = purchaseValueSum;
+    }
+
+
     // KEEP METHODS END
 
 }

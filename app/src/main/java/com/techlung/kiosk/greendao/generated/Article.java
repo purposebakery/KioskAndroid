@@ -15,6 +15,7 @@ public class Article {
     private Float price;
 
     // KEEP FIELDS - put your custom fields here
+    private int purchaseCount;
     // KEEP FIELDS END
 
     public Article() {
@@ -55,6 +56,15 @@ public class Article {
     }
 
     // KEEP METHODS - put your custom methods here
+
+    public int getPurchaseCount() {
+        return purchaseCount;
+    }
+
+    public void setPurchaseCount(int purchaseCount) {
+        this.purchaseCount = purchaseCount;
+    }
+
     // KEEP METHODS END
 
 }

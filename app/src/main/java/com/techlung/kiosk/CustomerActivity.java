@@ -8,9 +8,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -19,6 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -31,6 +32,8 @@ import com.techlung.kiosk.greendao.generated.Purchase;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class CustomerActivity extends AppCompatActivity {
@@ -56,7 +59,7 @@ public class CustomerActivity extends AppCompatActivity {
                 .setUseDefaultSharedPreference(true)
                 .build();
 
-        FloatingActionButton addCustomer = (FloatingActionButton) findViewById(R.id.addCustomer);
+        Button addCustomer = (Button) findViewById(R.id.addCustomer);
         addCustomer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -99,6 +102,7 @@ public class CustomerActivity extends AppCompatActivity {
             getMenuInflater().inflate(R.menu.customer_menu, menu);
             return true;
         }
+
         return false;
     }
 
@@ -111,8 +115,17 @@ public class CustomerActivity extends AppCompatActivity {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN) {
+        if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP) {
             adminCounter++;
+            if (adminCounter > 5) {
+                adminCounter = 0;
+            }
+        } else if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (adminCounter >= 5) {
+                adminCounter++;
+            } else {
+                adminCounter = 0;
+            }
             if (adminCounter == 10) {
                 adminCounter = 0;
                 Utils.isAdmin = !Utils.isAdmin;
@@ -122,8 +135,11 @@ public class CustomerActivity extends AppCompatActivity {
                 }
 
                 this.recreate();
+
             }
         }
+
+        Log.d("AdminCounter", "" + adminCounter);
 
         return super.onKeyDown(keyCode, event);
     }
@@ -150,6 +166,25 @@ public class CustomerActivity extends AppCompatActivity {
     private void updateUi() {
         customers.clear();
         customers.addAll(KioskDaoFactory.getInstance(this).getExtendedCustomerDao().getAllCustomers());
+
+        for (Customer customer : customers) {
+            float sum = 0;
+            List<Purchase> purchases = KioskDaoFactory.getInstance(this).getExtendedPurchaseDao().getPurchaseByCustomer(customer.getId());
+            for (Purchase purchase : purchases) {
+                if (purchase.getArticle() == null) {
+                    continue;
+                }
+                sum += (float) purchase.getAmount() * purchase.getArticle().getPrice();
+            }
+            customer.setPurchaseValueSum(sum);
+        }
+
+        Collections.sort(customers, new Comparator<Customer>() {
+            @Override
+            public int compare(Customer o1, Customer o2) {
+                return Float.valueOf(o2.getPurchaseValueSum()).compareTo(o1.getPurchaseValueSum());
+            }
+        });
 
         adapter.notifyDataSetChanged();
     }
@@ -225,22 +260,10 @@ public class CustomerActivity extends AppCompatActivity {
 
             name.setText(customer.getName());
 
-            float sum = 0;
             DecimalFormat format = new DecimalFormat("0.00");
-            List<Purchase> purchases = KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().getPurchaseByCustomer(customer.getId());
-            for (Purchase purchase : purchases) {
-                if (purchase.getArticle() == null) {
-                    continue;
-                }
-                sum += (float) purchase.getAmount() * purchase.getArticle().getPrice();
-            }
-            dept.setText(format.format(sum) + " " + getString(R.string.sym_euro));
+            dept.setText(format.format(customer.getPurchaseValueSum()) + " " + getString(R.string.sym_euro));
 
-            if (Utils.isAdmin) {
-                dept.setVisibility(View.VISIBLE);
-            } else {
-                dept.setVisibility(View.GONE);
-            }
+            dept.setVisibility(View.VISIBLE);
 
             return convertView;
         }

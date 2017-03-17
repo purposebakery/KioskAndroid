@@ -11,16 +11,18 @@
     <ListView
         android:id="@+id/customerList"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></ListView>
+        android:layout_height="match_parent"
+        android:layout_above="@+id/addCustomer" />
 
-    <android.support.design.widget.FloatingActionButton
+    <Button
         android:id="@+id/addCustomer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_margin="16dp"
-        android:src="@drawable/ic_add" />
-
+        android:background="@color/colorAccent"
+        android:gravity="center"
+        android:paddingLeft="64dp"
+        android:paddingRight="64dp"
+        android:text="Kunden Hinzufügen" />
 
 </RelativeLayout>
