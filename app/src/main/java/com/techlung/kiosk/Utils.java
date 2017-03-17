@@ -126,32 +126,6 @@ public final class Utils {
     }
 
     public static void initData(Context context) {
-        KioskDaoFactory factory = KioskDaoFactory.getInstance(context);
-        ExtendedCustomerDao extendedCustomerDao = factory.getExtendedCustomerDao();
-        ExtendedArticleDao extendedArticleDao = factory.getExtendedArticleDao();
-
-        if (extendedCustomerDao.getCount() == 0) {
-            extendedCustomerDao.insertOrReplace(createCustomer("Thomas", "thomas.hanning@bertelsmann.de"));
-            extendedCustomerDao.insertOrReplace(createCustomer("Robert", "robert.strickmann@bertelsmann.de"));
-            extendedCustomerDao.insertOrReplace(createCustomer("Willem", "willem.terhoerst@bertelsmann.de"));
-            extendedCustomerDao.insertOrReplace(createCustomer("Ilja", "ilja.wolik@bertelsmann.de"));
-            extendedCustomerDao.insertOrReplace(createCustomer("Johannes", "johannes.kleeschulte@bertelsmann.de"));
-            extendedCustomerDao.insertOrReplace(createCustomer("Jens", "jens.klingenberg@bertelsmann.de"));
-        }
-
-        if (extendedArticleDao.getCount() == 0) {
-            extendedArticleDao.insertOrReplace(createArticle("Kinderriegel", 0.35f));
-            extendedArticleDao.insertOrReplace(createArticle("Müsliriegel", 0.35f));
-            extendedArticleDao.insertOrReplace(createArticle("Früchteriegel", 0.35f));
-            extendedArticleDao.insertOrReplace(createArticle("Snickers", 0.45f));
-            extendedArticleDao.insertOrReplace(createArticle("Balisto", 0.45f));
-            extendedArticleDao.insertOrReplace(createArticle("Koppers", 0.45f));
-            extendedArticleDao.insertOrReplace(createArticle("Twix", 0.45f));
-            extendedArticleDao.insertOrReplace(createArticle("Pickup", 0.60f));
-            extendedArticleDao.insertOrReplace(createArticle("Kitkat", 0.60f));
-            extendedArticleDao.insertOrReplace(createArticle("Effect Energy", 1.10f));
-            extendedArticleDao.insertOrReplace(createArticle("Cashews", 2.30f));
-        }
     }
 
     private static Customer createCustomer(String name, String email) {
