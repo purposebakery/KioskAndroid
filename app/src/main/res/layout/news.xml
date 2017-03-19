@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView
+xmlns:android="http://schemas.android.com/apk/res/android"
+android:id="@+id/news"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:padding="16dp"
+android:textSize="14dp"
+android:text="Wegen schlimmen Dürren in Ostafrika, wird der gesamte Umsatz bis zum 1. Mai gespendet. Du kannst solange auch gerne etwas zusätzlich Spenden (siehe Artikel unten). Diese Spenden werden später normal in Rechnung gestellt aber nicht weiter in der App angezeigt oder berücksichtigt. \n- Oliver"/>

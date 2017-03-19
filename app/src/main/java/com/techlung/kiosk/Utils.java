@@ -8,6 +8,9 @@ import android.content.res.Resources;
 import android.support.v7.app.AlertDialog;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.widget.Toast;
 
 import com.techlung.kiosk.greendao.extended.ExtendedArticleDao;
 import com.techlung.kiosk.greendao.extended.ExtendedCustomerDao;
@@ -19,10 +22,15 @@ import com.techlung.kiosk.greendao.generated.Purchase;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
 public final class Utils {
+
+    public static final String SPENDE = "Spende";
 
     public static boolean isAdmin = false;
 
@@ -140,5 +148,50 @@ public final class Utils {
         article.setName(name);
         article.setPrice(price);
         return article;
+    }
+
+    public static void toastThanks(Context context) {
+        Toast toast = Toast.makeText(context, "Danke", Toast.LENGTH_LONG);
+        toast.setView(LayoutInflater.from(context).inflate(R.layout.toast_thanks, null, false));
+        toast.setGravity(Gravity.CENTER,0,0);
+        toast.show();
+    }
+
+    public static void toastBest(Context context) {
+        Toast toast = Toast.makeText(context, "Bester!", Toast.LENGTH_LONG);
+        toast.setView(LayoutInflater.from(context).inflate(R.layout.toast_best, null, false));
+        toast.setGravity(Gravity.CENTER,0,0);
+        toast.show();
+    }
+
+    public static int getPositionOfCustomer(Context context, Customer customerInQuestion) {
+        List<Customer> customers = new ArrayList<>();
+        customers.addAll(KioskDaoFactory.getInstance(context).getExtendedCustomerDao().getAllCustomers());
+
+        for (Customer customer : customers) {
+            float sum = 0;
+            List<Purchase> purchases = KioskDaoFactory.getInstance(context).getExtendedPurchaseDao().getPurchaseByCustomer(customer.getId());
+            for (Purchase purchase : purchases) {
+                if (purchase.getArticle() == null || purchase.getArticle().getName().contains(Utils.SPENDE)) {
+                    continue;
+                }
+                sum += (float) purchase.getAmount() * purchase.getArticle().getPrice();
+            }
+            customer.setPurchaseValueSum(sum);
+        }
+
+        Collections.sort(customers, new Comparator<Customer>() {
+            @Override
+            public int compare(Customer o1, Customer o2) {
+                return Float.valueOf(o2.getPurchaseValueSum()).compareTo(o1.getPurchaseValueSum());
+            }
+        });
+
+        for (int i = 0; i < customers.size(); ++i) {
+            if (customers.get(i).getId().equals(customerInQuestion.getId())) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

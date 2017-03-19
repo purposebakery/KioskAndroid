@@ -7,7 +7,6 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".CustomerActivity">
 
-
     <ListView
         android:id="@+id/articleList"
         android:layout_width="match_parent"
@@ -17,13 +16,16 @@
     <Button
         android:id="@+id/addArticle"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="64dp"
         android:layout_alignParentBottom="true"
         android:background="@color/colorAccent"
         android:gravity="center"
         android:paddingLeft="64dp"
         android:paddingRight="64dp"
-        android:text="Artikel Hinzufügen" />
+        android:text="Artikel Hinzufügen"
+        android:textColor="@color/md_white_1000"
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
 
 </RelativeLayout>

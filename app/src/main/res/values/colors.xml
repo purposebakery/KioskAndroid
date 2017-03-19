@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">@color/md_green_500</color>
-    <color name="colorPrimaryDark">@color/md_green_700</color>
-    <color name="colorAccent">@color/md_amber_700</color>
+    <color name="colorPrimary">@color/md_grey_500</color>
+    <color name="colorPrimaryDark">@color/md_grey_700</color>
+    <color name="colorAccent">@color/md_pink_600</color>
     <color name="colorPassive">#eeeeee</color>
 </resources>

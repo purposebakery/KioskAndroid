@@ -171,7 +171,7 @@ public class CustomerActivity extends AppCompatActivity {
             float sum = 0;
             List<Purchase> purchases = KioskDaoFactory.getInstance(this).getExtendedPurchaseDao().getPurchaseByCustomer(customer.getId());
             for (Purchase purchase : purchases) {
-                if (purchase.getArticle() == null) {
+                if (purchase.getArticle() == null || purchase.getArticle().getName().contains(Utils.SPENDE)) {
                     continue;
                 }
                 sum += (float) purchase.getAmount() * purchase.getArticle().getPrice();

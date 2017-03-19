@@ -23,6 +23,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.techlung.kiosk.greendao.extended.ExtendedPurchaseDao;
 import com.techlung.kiosk.greendao.extended.KioskDaoFactory;
@@ -69,8 +70,11 @@ public class ArticleActivity extends AppCompatActivity {
         });
 
         ListView articleGrid = (ListView) findViewById(R.id.articleList);
+        articleGrid.addHeaderView(LayoutInflater.from(this).inflate(R.layout.news, null, false), null, false);
         adapter = new ArticleAdapter(this, R.layout.article_list_item, articles, purchases, this);
         articleGrid.setAdapter(adapter);
+
+
 
         Long customerId = getIntent().getLongExtra(CUSTOMER_ID_EXTRA, -1);
         customer = KioskDaoFactory.getInstance(this).getExtendedCustomerDao().getCustomerById(customerId);
@@ -132,6 +136,11 @@ public class ArticleActivity extends AppCompatActivity {
         Collections.sort(articles, new Comparator<Article>() {
             @Override
             public int compare(Article o1, Article o2) {
+
+                if (o1.getName().contains(Utils.SPENDE) || o2.getName().contains(Utils.SPENDE)) {
+                    return o2.getName().compareTo(o1.getName());
+                }
+
                 return Integer.valueOf(o2.getPurchaseCount()).compareTo(o1.getPurchaseCount());
             }
         });
@@ -226,7 +235,11 @@ public class ArticleActivity extends AppCompatActivity {
             TextView price = (TextView) convertView.findViewById(R.id.price);
 
             if (article.getPurchaseCount() > 0) {
-                name.setText(Html.fromHtml(article.getName() + " <small>(" + article.getPurchaseCount() + ")</small>"));
+                if (article.getName().contains(Utils.SPENDE)) {
+                    name.setText(article.getName());
+                } else {
+                    name.setText(Html.fromHtml(article.getName() + " <small>(" + article.getPurchaseCount() + ")</small>"));
+                }
             } else {
                 name.setText(article.getName());
             }
@@ -237,10 +250,21 @@ public class ArticleActivity extends AppCompatActivity {
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    int oldPosition = Utils.getPositionOfCustomer(ArticleActivity.this, customer);
+
                     purchase.setAmount(purchase.getAmount() + 1);
                     KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().insertOrReplace(purchase);
                     onBackPressed();
                     notifyUserInput();
+
+                    if (purchase.getArticle().getName().contains(Utils.SPENDE)) {
+                        Utils.toastThanks(getContext());
+                    }
+                    int newPosition = Utils.getPositionOfCustomer(ArticleActivity.this, customer);
+
+                    if (newPosition == 0 && oldPosition != newPosition) {
+                        Utils.toastBest(ArticleActivity.this);
+                    }
                 }
             });
 
