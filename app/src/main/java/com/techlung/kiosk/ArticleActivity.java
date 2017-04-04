@@ -9,7 +9,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
-import android.support.v7.app.AppCompatActivity;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.view.LayoutInflater;
@@ -23,13 +24,11 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.techlung.kiosk.greendao.extended.ExtendedPurchaseDao;
-import com.techlung.kiosk.greendao.extended.KioskDaoFactory;
-import com.techlung.kiosk.greendao.generated.Article;
-import com.techlung.kiosk.greendao.generated.Customer;
-import com.techlung.kiosk.greendao.generated.Purchase;
+import com.techlung.kiosk.model.Article;
+import com.techlung.kiosk.model.Customer;
+import com.techlung.kiosk.model.Purchase;
+import com.techlung.kiosk.utils.Utils;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -40,9 +39,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-public class ArticleActivity extends AppCompatActivity {
+import io.realm.Realm;
+
+public class ArticleActivity extends BaseActivity {
 
     public static final String CUSTOMER_ID_EXTRA = "CUSTOMER_ID_EXTRA";
+
 
     private List<Article> articles = new ArrayList<Article>();
     private ArrayAdapter<Article> adapter;
@@ -65,19 +67,17 @@ public class ArticleActivity extends AppCompatActivity {
         addCustomer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                editArticle(new Article(), true);
+                editArticle(null);
             }
         });
 
         ListView articleGrid = (ListView) findViewById(R.id.articleList);
         articleGrid.addHeaderView(LayoutInflater.from(this).inflate(R.layout.news, null, false), null, false);
-        adapter = new ArticleAdapter(this, R.layout.article_list_item, articles, purchases, this);
+        adapter = new ArticleAdapter(this, R.layout.article_list_item, articles, purchases);
         articleGrid.setAdapter(adapter);
 
-
-
         Long customerId = getIntent().getLongExtra(CUSTOMER_ID_EXTRA, -1);
-        customer = KioskDaoFactory.getInstance(this).getExtendedCustomerDao().getCustomerById(customerId);
+        customer = Realm.getDefaultInstance().where(Customer.class).equalTo("id", customerId).findFirst();
         setTitle(customer.getName());
 
         updateUi();
@@ -110,22 +110,22 @@ public class ArticleActivity extends AppCompatActivity {
     private void updateUi() {
 
         articles.clear();
-        articles.addAll(KioskDaoFactory.getInstance(this).getExtendedArticleDao().getAllArticles());
+        articles.addAll(Realm.getDefaultInstance().where(Article.class).findAll());
 
         // initalize purchases if necessary
 
-        ExtendedPurchaseDao extendedPurchaseDao = KioskDaoFactory.getInstance(this).getExtendedPurchaseDao();
         purchases.clear();
         for (Article article : articles) {
-            Purchase purchase = extendedPurchaseDao.getPurchaseByCustomerAndArticle(customer.getId(), article.getId());
+            Purchase purchase = Realm.getDefaultInstance().where(Purchase.class).equalTo("customerId", customer.getId()).equalTo("articleId", article.getId()).findFirst();
             if (purchase == null) {
-                Purchase newPurchase = new Purchase();
-                newPurchase.setArticleId(article.getId());
-                newPurchase.setCustomerId(customer.getId());
-                newPurchase.setAmount(0);
-                extendedPurchaseDao.insertOrReplace(newPurchase);
-
-                purchase = extendedPurchaseDao.getPurchaseByCustomerAndArticle(customer.getId(), article.getId());
+                Realm.getDefaultInstance().beginTransaction();
+                purchase = Realm.getDefaultInstance().createObject(Purchase.class, Purchase.createId());
+                purchase.setArticleId(article.getId());
+                purchase.setCustomerId(customer.getId());
+                purchase.setArticle(article);
+                purchase.setCustomer(customer);
+                purchase.setAmount(0);
+                Realm.getDefaultInstance().commitTransaction();
             }
 
             purchases.put(article.getId(), purchase);
@@ -148,12 +148,11 @@ public class ArticleActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
     }
 
-    private void editArticle(final Article article, boolean createNew) {
+    private void editArticle(@Nullable final Article article) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        if (createNew) {
+        if (article == null) {
             builder.setTitle(R.string.article_create);
-            article.setPrice(0f);
         } else {
             builder.setTitle(R.string.article_edit);
         }
@@ -164,7 +163,9 @@ public class ArticleActivity extends AppCompatActivity {
 
         final EditText name = new EditText(this);
         layout.addView(name);
-        name.setText(article.getName());
+        if (article != null) {
+            name.setText(article.getName());
+        }
         name.setHint(getString(R.string.article_modify_name));
 
         final EditText price = new EditText(this);
@@ -172,17 +173,25 @@ public class ArticleActivity extends AppCompatActivity {
         layout.addView(price);
         price.setHint(getString(R.string.article_modify_price));
         DecimalFormat format = new DecimalFormat("0.00");
-        price.setText(format.format(article.getPrice()));
+        if (article == null) {
+            price.setText("0");
+        } else {
+            price.setText(format.format(article.getPrice()));
+        }
 
         builder.setView(layout);
 
         builder.setPositiveButton(R.string.alert_ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                article.setName(name.getText().toString());
-                article.setPrice(Float.parseFloat(price.getText().toString().replace(",", ".")));
-
-                KioskDaoFactory.getInstance(ArticleActivity.this).getExtendedArticleDao().insertOrReplace(article);
+                Article newArticle = article;
+                Realm.getDefaultInstance().beginTransaction();
+                if (newArticle == null) {
+                    newArticle = Realm.getDefaultInstance().createObject(Article.class, Article.createId());
+                }
+                newArticle.setName(name.getText().toString());
+                newArticle.setPrice(Float.parseFloat(price.getText().toString().replace(",", ".")));
+                Realm.getDefaultInstance().commitTransaction();
 
                 updateUi();
             }
@@ -195,11 +204,13 @@ public class ArticleActivity extends AppCompatActivity {
             }
         });
 
-        if (!createNew && Utils.isAdmin) {
+        if (article != null && Utils.isAdmin) {
             builder.setNeutralButton(R.string.alert_delete, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    KioskDaoFactory.getInstance(ArticleActivity.this).getExtendedArticleDao().delete(article);
+                    Realm.getDefaultInstance().beginTransaction();
+                    article.deleteFromRealm();
+                    Realm.getDefaultInstance().commitTransaction();
 
                     updateUi();
                 }
@@ -213,17 +224,16 @@ public class ArticleActivity extends AppCompatActivity {
     private class ArticleAdapter extends ArrayAdapter<Article> {
 
         private HashMap<Long, Purchase> purchases;
-        private ArticleActivity activity;
 
-        public ArticleAdapter(Context context, int resource, List<Article> articles, HashMap<Long, Purchase> purchases, ArticleActivity activity) {
+        public ArticleAdapter(Context context, int resource, List<Article> articles, HashMap<Long, Purchase> purchases) {
             super(context, resource, articles);
 
             this.purchases = purchases;
-            this.activity = activity;
         }
 
+        @NonNull
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.article_list_item, parent, false);
             }
@@ -250,17 +260,20 @@ public class ArticleActivity extends AppCompatActivity {
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int oldPosition = Utils.getPositionOfCustomer(ArticleActivity.this, customer);
+                    int oldPosition = customer.getRank();
 
+                    Realm.getDefaultInstance().beginTransaction();
                     purchase.setAmount(purchase.getAmount() + 1);
-                    KioskDaoFactory.getInstance(getContext()).getExtendedPurchaseDao().insertOrReplace(purchase);
+                    Realm.getDefaultInstance().commitTransaction();
                     onBackPressed();
                     notifyUserInput();
 
                     if (purchase.getArticle().getName().contains(Utils.SPENDE)) {
                         Utils.toastThanks(getContext());
                     }
-                    int newPosition = Utils.getPositionOfCustomer(ArticleActivity.this, customer);
+
+                    Customer.updateRanking();
+                    int newPosition = customer.getRank();
 
                     if (newPosition == 0 && oldPosition != newPosition) {
                         Utils.toastBest(ArticleActivity.this);
@@ -272,7 +285,7 @@ public class ArticleActivity extends AppCompatActivity {
                 @Override
                 public boolean onLongClick(View v) {
                     if (Utils.isAdmin) {
-                        ArticleActivity.this.editArticle(article, false);
+                        ArticleActivity.this.editArticle(article);
                     }
                     return false;
                 }
@@ -281,7 +294,7 @@ public class ArticleActivity extends AppCompatActivity {
             return convertView;
         }
 
-        public void notifyUserInput() {
+        void notifyUserInput() {
             Vibrator v = (Vibrator) this.getContext().getSystemService(Context.VIBRATOR_SERVICE);
             if (v.hasVibrator()) {
                 v.vibrate(100);

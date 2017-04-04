@@ -8,7 +8,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -26,21 +26,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.pixplicity.easyprefs.library.Prefs;
-import com.techlung.kiosk.greendao.extended.KioskDaoFactory;
-import com.techlung.kiosk.greendao.generated.Customer;
-import com.techlung.kiosk.greendao.generated.Purchase;
+import com.techlung.kiosk.model.Customer;
+import com.techlung.kiosk.utils.Utils;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
-public class CustomerActivity extends AppCompatActivity {
+import io.realm.Realm;
+import io.realm.Sort;
 
+public class CustomerActivity extends BaseActivity {
 
-    public static final String NEWS = "NEWS";
-    private List<Customer> customers = new ArrayList<Customer>();
+    private List<Customer> customers = new ArrayList<>();
     private ArrayAdapter<Customer> adapter;
 
     private int adminCounter = 0;
@@ -63,7 +61,7 @@ public class CustomerActivity extends AppCompatActivity {
         addCustomer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                editCustomer(new Customer(), true);
+                editCustomer(null, true);
             }
         });
 
@@ -89,15 +87,12 @@ public class CustomerActivity extends AppCompatActivity {
             }
         });
 
-        Utils.initData(this);
-
         updateUi();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-
         if (Utils.isAdmin) {
             getMenuInflater().inflate(R.menu.customer_menu, menu);
             return true;
@@ -111,7 +106,6 @@ public class CustomerActivity extends AppCompatActivity {
         super.onResume();
         updateUi();
     }
-
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -164,32 +158,15 @@ public class CustomerActivity extends AppCompatActivity {
     }
 
     private void updateUi() {
+        Customer.updateRanking();
+
         customers.clear();
-        customers.addAll(KioskDaoFactory.getInstance(this).getExtendedCustomerDao().getAllCustomers());
-
-        for (Customer customer : customers) {
-            float sum = 0;
-            List<Purchase> purchases = KioskDaoFactory.getInstance(this).getExtendedPurchaseDao().getPurchaseByCustomer(customer.getId());
-            for (Purchase purchase : purchases) {
-                if (purchase.getArticle() == null || purchase.getArticle().getName().contains(Utils.SPENDE)) {
-                    continue;
-                }
-                sum += (float) purchase.getAmount() * purchase.getArticle().getPrice();
-            }
-            customer.setPurchaseValueSum(sum);
-        }
-
-        Collections.sort(customers, new Comparator<Customer>() {
-            @Override
-            public int compare(Customer o1, Customer o2) {
-                return Float.valueOf(o2.getPurchaseValueSum()).compareTo(o1.getPurchaseValueSum());
-            }
-        });
+        customers.addAll(Realm.getDefaultInstance().where(Customer.class).findAllSorted("rank", Sort.ASCENDING));
 
         adapter.notifyDataSetChanged();
     }
 
-    private void editCustomer(final Customer customer, boolean createNew) {
+    private void editCustomer(@Nullable final Customer customer, boolean createNew) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         if (createNew) {
@@ -201,20 +178,29 @@ public class CustomerActivity extends AppCompatActivity {
         View content = LayoutInflater.from(this).inflate(R.layout.customer_add, null, false);
 
         final EditText name = (EditText) content.findViewById(R.id.input_name);
-        name.setText(customer.getName());
+        if (customer != null) {
+            name.setText(customer.getName());
+        }
 
         final EditText email = (EditText) content.findViewById(R.id.input_email);
-        email.setText(customer.getEmail());
+        if (customer != null) {
+            email.setText(customer.getEmail());
+        }
 
         builder.setView(content);
 
         builder.setPositiveButton(R.string.alert_ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                customer.setName(name.getText().toString());
-                customer.setEmail(email.getText().toString());
+                Customer customerNew = customer;
 
-                KioskDaoFactory.getInstance(CustomerActivity.this).getExtendedCustomerDao().insertOrReplace(customer);
+                Realm.getDefaultInstance().beginTransaction();
+                if (customerNew == null) {
+                    customerNew = Realm.getDefaultInstance().createObject(Customer.class, Customer.createId());
+                }
+                customerNew.setName(name.getText().toString());
+                customerNew.setEmail(email.getText().toString());
+                Realm.getDefaultInstance().commitTransaction();
 
                 updateUi();
             }
@@ -231,7 +217,11 @@ public class CustomerActivity extends AppCompatActivity {
             builder.setNeutralButton(R.string.alert_delete, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    KioskDaoFactory.getInstance(CustomerActivity.this).getExtendedCustomerDao().delete(customer);
+                    if (customer != null) {
+                        Realm.getDefaultInstance().beginTransaction();
+                        customer.deleteFromRealm();
+                        Realm.getDefaultInstance().commitTransaction();
+                    }
 
                     updateUi();
                 }
@@ -247,8 +237,9 @@ public class CustomerActivity extends AppCompatActivity {
             super(context, resource, objects);
         }
 
+        @NonNull
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.customer_list_item, parent, false);
             }

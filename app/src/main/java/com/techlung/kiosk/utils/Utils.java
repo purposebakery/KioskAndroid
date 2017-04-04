@@ -1,4 +1,4 @@
-package com.techlung.kiosk;
+package com.techlung.kiosk.utils;
 
 import android.app.Activity;
 import android.content.Context;
@@ -12,21 +12,17 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.widget.Toast;
 
-import com.techlung.kiosk.greendao.extended.ExtendedArticleDao;
-import com.techlung.kiosk.greendao.extended.ExtendedCustomerDao;
-import com.techlung.kiosk.greendao.extended.ExtendedPurchaseDao;
-import com.techlung.kiosk.greendao.extended.KioskDaoFactory;
-import com.techlung.kiosk.greendao.generated.Article;
-import com.techlung.kiosk.greendao.generated.Customer;
-import com.techlung.kiosk.greendao.generated.Purchase;
+import com.techlung.kiosk.R;
+import com.techlung.kiosk.model.Article;
+import com.techlung.kiosk.model.Customer;
+import com.techlung.kiosk.model.Purchase;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+
+import io.realm.Realm;
 
 public final class Utils {
 
@@ -62,7 +58,9 @@ public final class Utils {
         builder.setPositiveButton(R.string.alert_yes, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                KioskDaoFactory.getInstance(context).getExtendedPurchaseDao().deleteAll();
+                Realm.getDefaultInstance().beginTransaction();
+                Realm.getDefaultInstance().delete(Purchase.class);
+                Realm.getDefaultInstance().commitTransaction();
                 dialog.dismiss();
                 context.recreate();
             }
@@ -71,21 +69,17 @@ public final class Utils {
     }
 
     public static void doPayment(Activity activity) {
-        KioskDaoFactory factory = KioskDaoFactory.getInstance(activity);
-        ExtendedCustomerDao extendedCustomerDao = factory.getExtendedCustomerDao();
-        ExtendedArticleDao extendedArticleDao = factory.getExtendedArticleDao();
-        ExtendedPurchaseDao extendedPurchaseDao = factory.getExtendedPurchaseDao();
 
 
         DecimalFormat format = new DecimalFormat("0.00");
 
-        for (Customer customer : extendedCustomerDao.getAllCustomers()) {
+        for (Customer customer : Realm.getDefaultInstance().where(Customer.class).findAll()) {
             try {
 
                 StringBuffer shortSummary = new StringBuffer();
                 StringBuffer entireSummary = new StringBuffer();
 
-                List<Purchase> purchaseList = KioskDaoFactory.getInstance(activity).getExtendedPurchaseDao().getPurchaseByCustomer(customer.getId());
+                List<Purchase> purchaseList = Realm.getDefaultInstance().where(Purchase.class).equalTo("customerId", customer.getId()).findAll();
                 float sum = 0f;
                 StringBuffer purchaseSummary = new StringBuffer();
                 for (Purchase purchase : purchaseList) {
@@ -129,69 +123,19 @@ public final class Utils {
                 return;
             }
         }
-
-
-    }
-
-    public static void initData(Context context) {
-    }
-
-    private static Customer createCustomer(String name, String email) {
-        Customer customer = new Customer();
-        customer.setEmail(email);
-        customer.setName(name);
-        return customer;
-    }
-
-    private static Article createArticle(String name, Float price) {
-        Article article = new Article();
-        article.setName(name);
-        article.setPrice(price);
-        return article;
     }
 
     public static void toastThanks(Context context) {
         Toast toast = Toast.makeText(context, "Danke", Toast.LENGTH_LONG);
         toast.setView(LayoutInflater.from(context).inflate(R.layout.toast_thanks, null, false));
-        toast.setGravity(Gravity.CENTER,0,0);
+        toast.setGravity(Gravity.CENTER, 0, 0);
         toast.show();
     }
 
     public static void toastBest(Context context) {
         Toast toast = Toast.makeText(context, "Bester!", Toast.LENGTH_LONG);
         toast.setView(LayoutInflater.from(context).inflate(R.layout.toast_best, null, false));
-        toast.setGravity(Gravity.CENTER,0,0);
+        toast.setGravity(Gravity.CENTER, 0, 0);
         toast.show();
-    }
-
-    public static int getPositionOfCustomer(Context context, Customer customerInQuestion) {
-        List<Customer> customers = new ArrayList<>();
-        customers.addAll(KioskDaoFactory.getInstance(context).getExtendedCustomerDao().getAllCustomers());
-
-        for (Customer customer : customers) {
-            float sum = 0;
-            List<Purchase> purchases = KioskDaoFactory.getInstance(context).getExtendedPurchaseDao().getPurchaseByCustomer(customer.getId());
-            for (Purchase purchase : purchases) {
-                if (purchase.getArticle() == null || purchase.getArticle().getName().contains(Utils.SPENDE)) {
-                    continue;
-                }
-                sum += (float) purchase.getAmount() * purchase.getArticle().getPrice();
-            }
-            customer.setPurchaseValueSum(sum);
-        }
-
-        Collections.sort(customers, new Comparator<Customer>() {
-            @Override
-            public int compare(Customer o1, Customer o2) {
-                return Float.valueOf(o2.getPurchaseValueSum()).compareTo(o1.getPurchaseValueSum());
-            }
-        });
-
-        for (int i = 0; i < customers.size(); ++i) {
-            if (customers.get(i).getId().equals(customerInQuestion.getId())) {
-                return i;
-            }
-        }
-        return -1;
     }
 }
