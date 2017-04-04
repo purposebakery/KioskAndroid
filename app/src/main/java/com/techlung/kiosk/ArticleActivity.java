@@ -25,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.techlung.kiosk.generic.BaseActivity;
 import com.techlung.kiosk.model.Article;
 import com.techlung.kiosk.model.Customer;
 import com.techlung.kiosk.model.Purchase;

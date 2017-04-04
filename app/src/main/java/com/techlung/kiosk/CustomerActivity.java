@@ -26,6 +26,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.pixplicity.easyprefs.library.Prefs;
+import com.techlung.kiosk.generic.BaseActivity;
 import com.techlung.kiosk.model.Customer;
 import com.techlung.kiosk.utils.Utils;
 

@@ -1,4 +1,4 @@
-package com.techlung.kiosk;
+package com.techlung.kiosk.generic;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
